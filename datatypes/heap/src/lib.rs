@@ -20,13 +20,20 @@ impl<T> Heap<T> {
     self.buf.len()
   }
 
+  // Compute the balance factor of a node identified by its index.
+  fn balance_factor(&self, i: usize) -> isize {
+    self.buf[i].right.map(|r| self.buf[r].height as isize).unwrap_or(0) -
+      self.buf[i].left.map(|l| self.buf[l].height as isize).unwrap_or(0)
+  }
+
   // Push a value at the end of the buffer and get a node index.
   //
   // O(1)
-  fn push(&mut self, x: T, left: Option<usize>, right: Option<usize>) -> usize {
+  fn push(&mut self, x: T, height: usize, left: Option<usize>, right: Option<usize>) -> usize {
     let i = self.buf.len();
     self.buf.push(HeapNode {
       value: x,
+      height,
       left,
       right
     });
@@ -38,7 +45,7 @@ impl<T> Heap<T> {
   // O(log(N))
   pub fn insert(&mut self, x: T) where T: Ord {
     if self.buf.is_empty() {
-      self.push(x, None, None);
+      self.push(x, 0, None, None);
     } else {
       self.insert_(0, x);
     }
@@ -49,20 +56,34 @@ impl<T> Heap<T> {
   // O(log(N))
   fn insert_(&mut self, i: usize, x: T) where T: Ord {
     if x <= self.buf[i].value {
-      if let Some(lc) = self.buf[i].left {
-        self.insert_(lc, x);
+      // we can insert in subtrees
+      if let Some(lt) = self.buf[i].left {
+        if let Some(rt) = self.buf[i].right {
+          // both subtrees exist; insert in the one with the smallest balance factor
+          if self.balance_factor(lt) <= self.balance_factor(rt) {
+            self.insert_(lt, x);
+          } else {
+            self.insert_(rt, x);
+          }
+        } else {
+          // no right node, insert here
+          let ri = self.push(x, self.buf[i].height + 1, None, None);
+          self.buf[i].right = Some(ri);
+        }
       } else {
-        let lc = self.push(x, None, None);
-        self.buf[i].left = Some(lc);
+        // no left node, insert here
+          let li = self.push(x, self.buf[i].height + 1, None, None);
+          self.buf[i].left = Some(li);
       }
     } else {
-      if let Some(rc) = self.buf[i].right {
-        self.insert_(rc, x);
-      } else {
-        let rc = self.push(x, None, None);
-        self.buf[i].right = Some(rc);
-      }
-    }
+      // we need to replace this node; find which subtree has the biggest balance factor
+      if let Some(lt) = self.buf[i].left {
+        if let Some(rt) = self.buf[i].right {
+          // both subtrees exist
+          if self.balance_factor(lt) <= self.balance_factor(rt) {
+            // TODO
+            let node = self.push(x, self.buf[i].height,
+
   }
 
   // Check if something is contained.
@@ -101,6 +122,7 @@ impl<T> Heap<T> {
 #[derive(Debug)]
 struct HeapNode<T> {
   value: T,
+  height: usize,
   left: Option<usize>,
   right: Option<usize>
 }
