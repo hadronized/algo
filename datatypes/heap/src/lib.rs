@@ -31,11 +31,7 @@ impl<T> Heap<T> {
   //
   // O(h).
   fn up_head(&mut self, mut i: usize) where T: Ord {
-    loop {
-      if i == 0 {
-        break;
-      }
-
+    while i != 0 {
       let parent_i = Self::parent_index(i);
 
       if self.buf[parent_i] < self.buf[i] {
