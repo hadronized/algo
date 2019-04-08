@@ -129,4 +129,25 @@ mod tests {
     assert_eq!(heap.dequeue(), Some(0));
     assert_eq!(heap.dequeue(), Some(-15));
   }
+
+  #[test]
+  fn test1() {
+    use std::cmp::Reverse;
+
+    let mut heap = Heap::<Reverse<i32>>::new();
+
+    heap.enqueue(Reverse(12));
+    heap.enqueue(Reverse(3));
+    heap.enqueue(Reverse(-15));
+    heap.enqueue(Reverse(0));
+    heap.enqueue(Reverse(8));
+    heap.enqueue(Reverse(4));
+
+    assert_eq!(heap.dequeue(), Some(Reverse(-15)));
+    assert_eq!(heap.dequeue(), Some(Reverse(0)));
+    assert_eq!(heap.dequeue(), Some(Reverse(3)));
+    assert_eq!(heap.dequeue(), Some(Reverse(4)));
+    assert_eq!(heap.dequeue(), Some(Reverse(8)));
+    assert_eq!(heap.dequeue(), Some(Reverse(12)));
+  }
 }
