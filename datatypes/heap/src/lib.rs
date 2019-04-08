@@ -23,8 +23,15 @@ impl<T> Heap<T> {
 
   // Get the parent index of an indexed node.
   #[inline(always)]
-  fn parent_index(i: usize) -> usize {
+  fn parent(i: usize) -> usize {
     (i - 1) >> 1
+  }
+
+  // Get the children indexes of an indexed node.
+  #[inline(always)]
+  fn children(i: usize) -> (usize, usize) {
+    let k = 2 * i;
+    (k + 1, k + 2)
   }
 
   // Up head until heap property is restored.
@@ -32,7 +39,7 @@ impl<T> Heap<T> {
   // O(h).
   fn up_head(&mut self, mut i: usize) where T: Ord {
     while i != 0 {
-      let parent_i = Self::parent_index(i);
+      let parent_i = Self::parent(i);
 
       if self.buf[parent_i] < self.buf[i] {
         self.buf.swap(parent_i ,i);
@@ -41,6 +48,46 @@ impl<T> Heap<T> {
       }
 
       i = parent_i;
+    }
+  }
+
+  // Down heap until heap property is restored.
+  fn down_head(&mut self) -> Option<T> where T: Ord {
+    if self.buf.is_empty() {
+      None
+    } else {
+      let old_root = self.buf.swap_remove(0);
+      let mut i = 0;
+
+      while i < self.buf.len() {
+        let (left, right) = Self::children(i);
+
+        if left < self.len() && self.buf[i] < self.buf[left] {
+          if right < self.len() && self.buf[i] < self.buf[right] {
+            // both left and right violated
+            if self.buf[left] < self.buf[right] {
+              self.buf.swap(i, right);
+              i = right;
+            } else {
+              self.buf.swap(i, left);
+              i = left;
+            }
+          } else {
+            // only left violated
+            self.buf.swap(i, left);
+            i = left;
+          }
+        } else if right < self.len() && self.buf[i] < self.buf[right] {
+          // only right violated
+          self.buf.swap(i, right);
+          i = right;
+        } else {
+          // property is okay
+          break;
+        }
+      }
+
+      Some(old_root)
     }
   }
 
@@ -53,6 +100,11 @@ impl<T> Heap<T> {
     self.buf.push(x);
     self.up_head(i);
   }
+
+  /// Dequeue an element from the heap.
+  pub fn dequeue(&mut self) -> Option<T> where T: Ord {
+    self.down_head()
+  }
 }
 
 #[cfg(test)]
@@ -63,19 +115,18 @@ mod tests {
   fn test0() {
     let mut heap = Heap::<i32>::new();
 
-    heap.enqueue(12); println!("{:?}", heap);
-    heap.enqueue(3); println!("{:?}", heap);
-    heap.enqueue(-15); println!("{:?}", heap);
-    heap.enqueue(0); println!("{:?}", heap);
-    heap.enqueue(8); println!("{:?}", heap);
-    heap.enqueue(4); println!("{:?}", heap);
+    heap.enqueue(12);
+    heap.enqueue(3);
+    heap.enqueue(-15);
+    heap.enqueue(0);
+    heap.enqueue(8);
+    heap.enqueue(4);
 
-    //assert!(heap.contains(&12));
-    //assert!(heap.contains(&3));
-    //assert!(heap.contains(&(-15)));
-    //assert!(heap.contains(&0));
-    //assert!(heap.contains(&8));
-
-    panic!();
+    assert_eq!(heap.dequeue(), Some(12));
+    assert_eq!(heap.dequeue(), Some(8));
+    assert_eq!(heap.dequeue(), Some(4));
+    assert_eq!(heap.dequeue(), Some(3));
+    assert_eq!(heap.dequeue(), Some(0));
+    assert_eq!(heap.dequeue(), Some(-15));
   }
 }
