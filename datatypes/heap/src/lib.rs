@@ -30,7 +30,7 @@ impl<T> Heap<T> {
   // Get the children indexes of an indexed node.
   #[inline(always)]
   fn children(i: usize) -> (usize, usize) {
-    let k = 2 * i;
+    let k = i << 1;
     (k + 1, k + 2)
   }
 
